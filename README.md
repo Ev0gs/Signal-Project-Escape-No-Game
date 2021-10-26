@@ -112,9 +112,11 @@ In order to allow the Agent in charge of listening to check if the received mess
 
 ### Manchester encoding
 In telecommunication and data storage, Manchester code is a line code in which the encoding of each data bit is either low then high, or high then low, for equal time.
+
 <p align="center">
   <img width="600" height="400" src="https://user-images.githubusercontent.com/93186642/138866973-82bcbd98-ec14-4b85-9db2-4d9c0d928ea8.png">
 </p>
+
 ```
 message_bool = []                          #Initialisation d'une liste vide
 for i in range(0,len(data_crc),1):         #Boucle for allant de 0 à la valeur de la taille du message codé en CRC par pas de 1
@@ -137,9 +139,11 @@ This part of the code represents the Manchester coding. Indeed, it represents al
 
 ### ASK Modulation (on signal)
 Amplitude-shift keying is a form of amplitude modulation that represents digital data as variations in the amplitude of a carrier wave. In an ASK system, a symbol, representing one or more bits, is sent by transmitting a fixed-amplitude carrier wave at a fixed frequency for a specific time duration.
+
 <p align="center">
   <img width="600" height="400" src="https://user-images.githubusercontent.com/93186642/138867333-8a2163ca-4125-4bf2-af49-b21aa5bfe1ad.png">
 </p>
+
 ```
 #Modulation ASK du message
 M = message_code                           #Stockage du mesage dans une variable "M"
@@ -175,13 +179,16 @@ plt.xlabel('temps (s)')
 plt.ylabel('Amplitude')
 plt.grid()
 ```
+
 <p align="center">
   <img width="600" height="400" src="https://user-images.githubusercontent.com/93186642/138867449-b97c7cc4-bd87-403a-86b2-754cdbdab6aa.png">
 </p>
+
 This step is the ASK modulation. This one was set up via data that we defined ourselves such as "baud" being the desired rate on the transmission channel (in bit/s), "Nbits" being the number of initial bits (size of the message), "Ns" being the number of symbols per bit (Sampling frequency / Bit rate), "N" being the total number of bits to be modulated (Number of symbol per bit * Number of bits). However, as we had chosen a carrier frequency of 35 000Hz to make the message inaudible, we decided to double the value of 44100Hz for the sampling frequency (88200Hz) because according to Shannon Nyquist's theorem, the value of the sampling frequency must be at least twice the value of the signal frequency. Finally, via the ASK modulation, we transform the binary message in the form of a digital signal into an analog signal of frequency 35,000Hz, i.e. an inaudible sound.
 
 ### FSK Modulation (on signal)
 Frequency-shift keying is a frequency modulation scheme in which digital information is transmitted through discrete frequency changes of a carrier signal.
+
 <p align="center">
   <img width="600" height="400" src="https://user-images.githubusercontent.com/93186642/138867668-95c3340f-e382-4228-902d-dca3fd1af647.png">
 </p>
@@ -227,18 +234,202 @@ plt.ylabel('Amplitude')
 plt.axis([0,0.009,-1,1])
 plt.grid()
 ```
+
 <p align="center">
   <img width="600" height="400" src="https://user-images.githubusercontent.com/93186642/138867779-5b719f77-18f4-4f9b-aed1-1344ce2a5524.png">
 </p>
+
 In order to show our skills, we decided to implement an additional feature to our code such as a second alternative modulation, the FSK modulation. This one is based on the same values as the ASK modulation but here we have two carriers (of frequency 34 000Hz and 35 000Hz) which will allow to realize this type of modulation. However, we find that the FSK modulation is still a type of modulation to be avoided in our case because it could have problems and make the signal audible even if it is very unlikely.
 
 ### Sending message in sound form
+
 ```
 #Émission du message sous forme de signal (Jouer le son)
 sd.play(ASK, Fe)
 ```
+
 The transmission of the message in the form of sound is a fundamental step of the code because it allows the infiltrated Agent to send his message in the form of sound through the microphone of the conference room so that it is then received by the computer of the Agent in charge of listening.
 
 ## Receiving phase
-###
+### ASK demodulation of the received signal
+```
+#Initialisation des données nécessaires à la démodulation ASK
+Fe = 88200
+Fp = 35000
+baud = 600
+N = len(ASK)
+Ns = Fe/baud
+
+t = np.arange (0.0,N)/Fe                                       #Génération du vecteur temps
+
+Porteuse=np.sin(2*np.pi*Fp*t)                                  #Génération de la porteuse
+Produit=ASK*Porteuse
+
+#Intégration
+y=[]                                                           #Initialisation d'une liste vide
+for i in range(0,int(N),int(Ns)):                              #Boucle for allant de 0 à N par pas de NS
+    y.append(np.trapz(Produit[i:i+int(Ns)],t[i:i+int(Ns)]))    #Ajout du résultat de l'intégrale des données du Produit de l'ASK avec la Porteuse en fonction du temps allant de i à i+Ns
+
+#Affichage de l'ASK
+plt.figure (figsize = (10,6))
+plt.plot(t,ASK,'b')
+plt.title('ASK')
+plt.xlabel('temps (s)')
+plt.ylabel('Amplitude')
+plt.grid()
+
+#Affichage des données de y
+print("Les valeurs de y sont :",y)
+```
+
+La démodulation ASK est la première étape de la phase de réception. En effet, celle-ci permet via le code ci-dessus d'effectuer l'inverse de la modulation ASK réalisée lors de l'émission du message et donc de retrouver des valeurs dans une variable, "y" dans notre cas, étant les résultats de l'intégrale du produit de l'ASK et de la porteuse. Ces valeurs vont ensuite nous permettre de réaliser le décodage Manchester que nous verrons ensute.
+
+### FSK Demodulation
+
+```
+#Initialisation des données nécessaires à la démodulation FSK
+Fp1 = 35000
+Fp2 = 36000
+S1 = np.sin(2*np.pi*Fp1*t)                           #Génération de la première porteuse S1
+S2 = np.sin(2*np.pi*Fp2*t)                           #Génération de la deuxième porteuse S2
+
+Produit1 = S1*FSK
+Produit2 = S2*FSK
+
+Res1=[]                                              #Initialisation d'une liste vide
+Res2=[]                                              #Initialisation d'une liste vide
+
+i=0                                                  #Initialisation de i à 0
+for i in range(0,int(N),int(Ns)):                    #Boucle for allant de 0 à N par pas de Ns
+    Res1.append(np.trapz(Produit1[i:i+int(Ns)]))     #Ajout des résultat de l'intégrale du Produit(Porteuse1(S1)*FSK) à la liste "Res1" allant de i à i+Ns
+    Res2.append(np.trapz(Produit2[i:i+int(Ns)]))     #Ajout des résultat de l'intégrale du Produit(Porteuse2(S2)*FSK) à la liste "Res2" allant de i à i+Ns
+
+y=[]                                                 #Initialisation d'une liste vide
+for i in range(0,len(Res1)):                         #Boucle for allant de 0 à la taille de "Res1"
+    if Res1[i]>Res2[i]:                              #Conditionnel if qui vérifie si la i-ème valeur de Res1 est supérieure à la i-ème valeur de Res2
+        y.append(1)                                  #Ajout de la valeur 1 à la liste "y" si la condition est vérifiée
+    if Res1[i]<Res2[i]:                              #Conditionnel if qui vérifie si la i-ème valeur de Res1 est inférieure à la i-ème valeur de Res2
+        y.append(0)                                  #Ajout de la valeur 0 à la liste "y" si la condition est vérifiée
+
+#Affichage de FSK
+plt.figure (figsize = (10,6))
+plt.plot(t,FSK,'b')
+plt.title('FSK')
+plt.xlabel('temps (s)')
+plt.ylabel('Amplitude')
+plt.axis([0,0.009,-1,1])
+plt.grid()
+
+#Affichage des valeurs de y
+print("Les valeurs de y sont :",y)
+```
+
+Tout comme la démodulation ASK, la FSK sert à réaliser l'inverse de ce type de modulation permettant alors de transformer le signal ASK en une liste de valeurs binaires correspondant au message envoyé qu'il n'y aura plus qu'à décoder en Manchester. La différence avec la démodulation ASK,c'est que dans ce cas là, on retrouve finalement un message binaire sous forme de liste au lieu d'une liste de valeurs approximatives n'étant pas binaires.
+
+### Manchester decoding
+
+```
+#Décodage Manchester
+message_demodule = np.array(y)>0                                         #Si >0 renvoie True, sinon renvoie False
+
+message_recu_decode=[]                                                   #Initialisation d'une liste vide
+for iii in range(0,len(message_demodule)):                               #Boucle for allant de 0 à la valeur de la taille de "message_demodule"
+    if message_demodule[iii]==True:                                      #Conditionnel if qui vérifie si la iii-ème valeur de "message_demodule" est égale à "True"
+        message_recu_decode.extend([int(1)])                             #Ajout de la valeur 1 à la liste "message_recu_decode" si la condition est vérifiée
+    if message_demodule[iii]==False:                                     #Conditionnel if qui vérifie si la iii-ème valeur de "message_demodule" est égale à "False"
+        message_recu_decode.extend([int(0)])                             #Ajout de la valeur 0 à la liste "message_recu_decode" si la condition est vérifiée
+
+message_recu_bin=[]                                                      #Initialisation d'une liste vide
+for iiii in range(0, len(message_demodule),2):                           #Boucle for allant de 0 à la valeur de la taille de "message_demodule" par pas de 2 afin de revenir à un bit et non 2 bits par état
+    if message_recu_decode[iiii]==1 and message_recu_decode[iiii+1]==0:  #Conditionnel if qui vérifie si la iiii-ème valeur de "message_recu_decode" est égale à 1 et si la (iiii+1)-ème valeur de "message_recu_decode" est égale à 0
+        message_recu_bin.extend([str(1)])                                #Ajout d'un caractère 1 à la liste mesage_recu_bin si la condition est vérifiée
+    if message_recu_decode[iiii]==0 and message_recu_decode[iiii+1]==1:  #Conditionnel if qui vérifie si la iiii-ème valeur de "message_recu_decode" est égale à 0 et si la (iiii+1)-ème valeur de "message_recu_decode" est égale à 1
+        message_recu_bin.extend([str(0)])                                #Ajout d'un caractère 0 à la liste mesage_recu_bin si la condition est vérifiée
+print(message_recu_bin)                                                  #Affichage de la liste de caractères "message_recu_bin" contenant le message initial envoyé par l'agent après avoir été codé en CRC
+```
+
+Comme la majorité des étapes de la phase de réception, le décodage Manchester sert à réaliser l'inverse du codage Manchester. De ce fait, dans notre code, nous avons fait en sorte de convertir le message en booléen puis en binaire (message initial de l'Agent infiltré avec codage Manchester). En effet, en réalisant un pas de deux dans la deuxième boucle "for" nous pouvons diviser la liste par deux et donc revenir au message initial car lors du codage manchester, il faut doubler les bits de la liste en fonction du code binaire. Ce code marche tout aussi bien pour les résultats de la démodulation ASK que ceux de la démodulation FSK.
+
+### Conversion of the binary list into a character string
+ 
+```
+ #conversion liste en chaine de caractère
+message_réceptionné=''.join(message_recu_bin)
+print(message_réceptionné)
+```
+
+Comme vous pouvez le voir, nous avons décidé de convertir la liste binaire obtenue lors du décodage Manchester en une chaîne de caractère pour que celle-ci soit exploitable par le décodage CRC et la conversion binaire en texte qui viennent par la suite.
+
+### CRC decoding and error verification
+
+```
+#Définition de la fonction de décodage
+def decodage(data_crc, key):
+    length_key = len(key)                                                #Stockage de la taille de la clé
+    data_ajout = data_crc + '0'*(length_key-1)                           #Ajout des '0' en fonction de la taille de la clé-1
+    reste = Division_eucl(data_ajout, key)                               #Stockage du reste de la division euclidienne du message auquel on ajouté les 0 par la clé
+    return reste                                                         #On retourne la valeur du reste
+
+key = '11010'                                                            #Initialisation de la clé (c'est la même que dans la phase d'émission)
+check = decodage(message_réceptionné, key)                               #Récupération du reste de la division euclidienne du message réceptionné par la clé
+print("Le reste de la division après décodage est ->" +check)            #Affichage du reste de la division après décodage
+temp = "0" * (len(key) - 1)                                              #Récupération du message de base
+if check == temp:                                                        #Conditionnel if qui vérifie si check est égal à temp
+    print("Les données -> "+message_réceptionné +"<- sont bien reçues!") #Affichage d'un message de confirmation de la validité du message si la condition est vérifiée
+else:       
+    print("Erreur de réception")                                         #Affichage d'un message d'erreur si la condition n'est pas vérifiée
+```
+
+Afin de réaliser le décodage CRC du message reçu par l'ordinateur de l'agent en charge d'écoute, nous avons crée une fonction decodage qui nous permet de réaliser la division euclidienne du message via la clé utilisée lors de l'encodage CRC et d'en récupérer le reste. En effet, si ce reste est égal à 0, le message ne possède pas d'erreur. Cependant, si ce reste est différent de 0, alors il y a une erreur de réception. De ce fait, nous avons fait afficher les sorties de ce code ci-dessus pour pouvoir mieux le visualiser.
+
+### Conversion of the binary message into text via the ASCII table
+
+```
+#Définition de la fonction de conversion du binaire en décimale
+def BinaryToDecimal(binary):  
+    #initialisation des variables
+    decimal = 0
+    i = 0
+    n = 0
+    while(binary != 0):                            #Boucle tant que qui s'execute tant que le code binaire est différent de 0
+        dec = binary % 10                          #On récupère le reste de la division euclidienne du code binaire par 10
+        decimal = decimal + dec * pow(2, i)        #On récupère la décimale correspondant au code binaire
+        binary = binary//10                        #On effectue la division euclidienne du code binaire par 10 sans récupérer le reste
+        i += 1                                     #On incrémente i de 1
+    return (decimal)                               #On retourne la valeur décimale du code binaire entré
+
+#Conversion du message binaire en texte via la table ASCII
+Total_texte=''                                     #Initialisation d'une chaîne de caractère vide
+for i in range(0,len(message_réceptionné),7):      #Boucle for allant de 0 à la taille de "message_réceptionné"
+    bin_data=int(message_réceptionné[i:i+7])       #Stockage des 7 bits correspondant à une lettre
+    decimal_data = BinaryToDecimal(bin_data)       #Conversion du code binaire (7 bits) en décimal
+    Total_texte = Total_texte + chr(decimal_data)  #Conversion de la décimale en texte puis ajout du caractère à la liste "Total_teste"
+```
+
+Lors de cette étape de conversion du message binaire en texte via la table ASCII, nous avons défini une fonction "BinaryToDecimal" qui prend comme argument le code binaire de 7 bits correspondant à un caractère (soit à une lettre). De ce fait, la boucle "for" nous permet de sélectionner les 7 bits voulus, de les convertir en décimal, puis de les convertir en texte via la fonction chr().
+
+### Display of the message
+
+```
+#Affichage du message
+print(Total_texte)
+```
+
+Dans cette étape nous affichons simplement le résultat obtenu lors de la conversion du message binaire en texte afin que l'Agent en charge d'écoute puisse voir le message.
+
+### Acknowledgement of receipt
+
+```
+verification = int(check,2)             #Conversion de "check" binaire en décimal provenant du décodage CRC
+FeA=44100                               #Initialisation de la fréquence d'échantillonnage pour un signal de fréquence comprise dans le spectre de l'audible par l'oreille humaine
+t=np.arange(0,0.2,1/FeA)                #Génération d'un vecteur temps de durée 0.2s (ce temps nous parrait suffisant pour un accusé de réception(bip sonore) mais il reste mdifiable)
+Accusé_réception=np.sin(2*np.pi*5000*t) #Génération d'un signal quelconque de fréquence 5 000Hz
+if verification == 0:                   #Conditionnel if qui vérifie si le message est bien reçu
+    sd.play(Accusé_réception, FeA)      #Émission du message sous forme de signal (Jouer le son) si la condition est vérifiée, sinon pas d'accusé de réception
+```
+
+Dans cette étape finale du code, nous avons réalisé un accusé de réception comme dans les liaisons (communications) half-duplex. Pour réaliser ce code, nous avons initialisé une nouvelle fréquence d'échantillonnage correspondant à celle d'un signal dont la fréquence est dans le spectre de l'audible par l'oreille humaine. En effet, cela s'explique par le fait que l'Agent en charge d'écoute va envoyer un bip sonore audible à l'Agent infiltré pour qu'il sache si son message a été correctement reçu. De ce fait, nous avons crée un signal de fréquence 5 000Hz et une condition qui permet l'envoi de l'accusé de réception (bip sonore) seulement si le message ne comporte pas d'erreur à la réception (cf. décodage CRC). Finalement, l'Agent infiltré pourra savoir si il doit renvoyer son message ou non, et donc savoir si c'est à lui de communiquer ou non.
+
+# Conclusion
+Finalement, si les prochains Agents de la cellule d'infiltration utilisent ce code, nous pouvons garantir qu'une situation comme celle vécue par l'Agent K57 n'arrivera plus.
 

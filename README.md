@@ -282,7 +282,8 @@ plt.grid()
 print("Les valeurs de y sont :",y)
 ```
 
-La démodulation ASK est la première étape de la phase de réception. En effet, celle-ci permet via le code ci-dessus d'effectuer l'inverse de la modulation ASK réalisée lors de l'émission du message et donc de retrouver des valeurs dans une variable, "y" dans notre cas, étant les résultats de l'intégrale du produit de l'ASK et de la porteuse. Ces valeurs vont ensuite nous permettre de réaliser le décodage Manchester que nous verrons ensute.
+The ASK demodulation is the first stage of the reception phase. Indeed, this one allows via the code above to carry out the reverse of the ASK modulation carried out at the time of the emission of the message and thus to find values in a variable, "y" in our case, being the results of the integral of the product of the ASK and the carrier. These values will then allow us to carry out the Manchester decoding that we will see next.
+
 
 ### FSK Demodulation
 
@@ -324,7 +325,7 @@ plt.grid()
 print("Les valeurs de y sont :",y)
 ```
 
-Tout comme la démodulation ASK, la FSK sert à réaliser l'inverse de ce type de modulation permettant alors de transformer le signal ASK en une liste de valeurs binaires correspondant au message envoyé qu'il n'y aura plus qu'à décoder en Manchester. La différence avec la démodulation ASK,c'est que dans ce cas là, on retrouve finalement un message binaire sous forme de liste au lieu d'une liste de valeurs approximatives n'étant pas binaires.
+Just like ASK demodulation, FSK is used to carry out the reverse of this type of modulation, allowing the ASK signal to be transformed into a list of binary values corresponding to the message sent, which only has to be decoded in Manchester. The difference with the ASK demodulation, it is that in this case there, one finds finally a binary message in the form of list instead of a list of approximate values not being binary.
 
 ### Manchester decoding
 
@@ -348,7 +349,7 @@ for iiii in range(0, len(message_demodule),2):                           #Boucle
 print(message_recu_bin)                                                  #Affichage de la liste de caractères "message_recu_bin" contenant le message initial envoyé par l'agent après avoir été codé en CRC
 ```
 
-Comme la majorité des étapes de la phase de réception, le décodage Manchester sert à réaliser l'inverse du codage Manchester. De ce fait, dans notre code, nous avons fait en sorte de convertir le message en booléen puis en binaire (message initial de l'Agent infiltré avec codage Manchester). En effet, en réalisant un pas de deux dans la deuxième boucle "for" nous pouvons diviser la liste par deux et donc revenir au message initial car lors du codage manchester, il faut doubler les bits de la liste en fonction du code binaire. Ce code marche tout aussi bien pour les résultats de la démodulation ASK que ceux de la démodulation FSK.
+Like most of the steps in the reception phase, Manchester decoding is used to perform the reverse of Manchester encoding. Therefore, in our code, we have made sure to convert the message into Boolean and then into binary (initial message of the infiltrated agent with Manchester encoding). In fact, by taking a step of two in the second "for" loop we can divide the list by two and thus return to the initial message, because during the Manchester coding, the bits of the list must be doubled according to the binary code. This code works just as well for the results of ASK demodulation as for FSK demodulation.
 
 ### Conversion of the binary list into a character string
  
@@ -358,7 +359,7 @@ message_réceptionné=''.join(message_recu_bin)
 print(message_réceptionné)
 ```
 
-Comme vous pouvez le voir, nous avons décidé de convertir la liste binaire obtenue lors du décodage Manchester en une chaîne de caractère pour que celle-ci soit exploitable par le décodage CRC et la conversion binaire en texte qui viennent par la suite.
+As you can see, we decided to convert the binary list obtained during the Manchester decoding into a character string so that it can be exploited by the CRC decoding and the binary-to-text conversion that follow.
 
 ### CRC decoding and error verification
 
@@ -380,7 +381,7 @@ else:
     print("Erreur de réception")                                         #Affichage d'un message d'erreur si la condition n'est pas vérifiée
 ```
 
-Afin de réaliser le décodage CRC du message reçu par l'ordinateur de l'agent en charge d'écoute, nous avons crée une fonction decodage qui nous permet de réaliser la division euclidienne du message via la clé utilisée lors de l'encodage CRC et d'en récupérer le reste. En effet, si ce reste est égal à 0, le message ne possède pas d'erreur. Cependant, si ce reste est différent de 0, alors il y a une erreur de réception. De ce fait, nous avons fait afficher les sorties de ce code ci-dessus pour pouvoir mieux le visualiser.
+In order to carry out the CRC decoding of the message received by the computer of the agent in charge of listening, we have created a decoding function which allows us to carry out the Euclidean division of the message via the key used during the CRC encoding and to recover the remainder. Indeed, if this remainder is equal to 0, the message has no error. However, if this remainder is different from 0, then there is a reception error. Therefore, we have displayed the outputs of this code above to be able to visualize it better.
 
 ### Conversion of the binary message into text via the ASCII table
 
@@ -406,7 +407,7 @@ for i in range(0,len(message_réceptionné),7):      #Boucle for allant de 0 à 
     Total_texte = Total_texte + chr(decimal_data)  #Conversion de la décimale en texte puis ajout du caractère à la liste "Total_teste"
 ```
 
-Lors de cette étape de conversion du message binaire en texte via la table ASCII, nous avons défini une fonction "BinaryToDecimal" qui prend comme argument le code binaire de 7 bits correspondant à un caractère (soit à une lettre). De ce fait, la boucle "for" nous permet de sélectionner les 7 bits voulus, de les convertir en décimal, puis de les convertir en texte via la fonction chr().
+During this step of conversion of the binary message into text via the ASCII table, we defined a function "BinaryToDecimal" which takes as argument the binary code of 7 bits corresponding to a character (i.e. to a letter). Thus, the "for" loop allows us to select the 7 bits we want, to convert them into decimal, and then to convert them into text via the chr() function.
 
 ### Display of the message
 
@@ -415,7 +416,7 @@ Lors de cette étape de conversion du message binaire en texte via la table ASCI
 print(Total_texte)
 ```
 
-Dans cette étape nous affichons simplement le résultat obtenu lors de la conversion du message binaire en texte afin que l'Agent en charge d'écoute puisse voir le message.
+In this step we simply display the result obtained when converting the binary message to text so that the Agent in charge of listening can see the message.
 
 ### Acknowledgement of receipt
 
@@ -428,8 +429,8 @@ if verification == 0:                   #Conditionnel if qui vérifie si le mess
     sd.play(Accusé_réception, FeA)      #Émission du message sous forme de signal (Jouer le son) si la condition est vérifiée, sinon pas d'accusé de réception
 ```
 
-Dans cette étape finale du code, nous avons réalisé un accusé de réception comme dans les liaisons (communications) half-duplex. Pour réaliser ce code, nous avons initialisé une nouvelle fréquence d'échantillonnage correspondant à celle d'un signal dont la fréquence est dans le spectre de l'audible par l'oreille humaine. En effet, cela s'explique par le fait que l'Agent en charge d'écoute va envoyer un bip sonore audible à l'Agent infiltré pour qu'il sache si son message a été correctement reçu. De ce fait, nous avons crée un signal de fréquence 5 000Hz et une condition qui permet l'envoi de l'accusé de réception (bip sonore) seulement si le message ne comporte pas d'erreur à la réception (cf. décodage CRC). Finalement, l'Agent infiltré pourra savoir si il doit renvoyer son message ou non, et donc savoir si c'est à lui de communiquer ou non.
+In this final stage of the code, we carried out an acknowledgement as in the half-duplex links (communications). To realize this code, we initialized a new sampling frequency corresponding to that of a signal whose frequency is in the spectrum of the audible by the human ear. This is because the agent in charge of listening will send an audible beep to the infiltrated agent so that he knows if his message has been correctly received. For this reason, we have created a 5000Hz signal and a condition that allows the acknowledgement to be sent (beep) only if the message does not contain any error on reception (see CRC decoding). Finally, the infiltrated agent will be able to know if it should send its message or not, and thus know if it should communicate or not.
 
 # Conclusion
-Finalement, si les prochains Agents de la cellule d'infiltration utilisent ce code, nous pouvons garantir qu'une situation comme celle vécue par l'Agent K57 n'arrivera plus.
+Finally, if the next agents of the infiltration cell use this code, we can guarantee that a situation like the one experienced by Agent K57 will not happen again.
 
